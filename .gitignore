@@ -1,6 +1,6 @@
 # Binaries
-p2p-tool
-ripplego
+/p2p-tool
+/ripplego
 *.exe
 *.dll
 *.so
