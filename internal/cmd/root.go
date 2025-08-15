@@ -3,6 +3,9 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/schollz/progressbar/v3"
@@ -20,6 +23,7 @@ func NewRootCmd() *cobra.Command {
 
 	cmd.AddCommand(newVersionCmd())
 	cmd.AddCommand(newListCmd())
+	cmd.AddCommand(newServeCmd())
 
 	return cmd
 }
@@ -36,16 +40,16 @@ func newVersionCmd() *cobra.Command {
 
 func newListCmd() *cobra.Command {
 	var port int
-	var host string
+	var name string
 
 	c := &cobra.Command{
 		Use:   "list",
-		Short: "查看当前可下载文件 (发现局域网节点)",
+		Short: "发现局域网节点 (UDP 广播)",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
 			defer cancel()
 
-			finder := discovery.NewMDNSFinder(host, port)
+			finder := discovery.NewUDPFinderQuery(port)
 			if err := finder.Start(ctx); err != nil {
 				return err
 			}
@@ -67,7 +71,37 @@ func newListCmd() *cobra.Command {
 		},
 	}
 
-	c.Flags().IntVarP(&port, "port", "p", 7788, "mDNS 广播端口")
-	c.Flags().StringVar(&host, "host", "ripplego.local", "mDNS 主机名")
+	c.Flags().IntVarP(&port, "port", "p", 7788, "UDP 广播端口")
+	c.Flags().StringVar(&name, "name", "ripplego", "节点名称")
+	return c
+}
+
+func newServeCmd() *cobra.Command {
+	var port int
+	var name string
+
+	c := &cobra.Command{
+		Use:   "serve",
+		Short: "启动节点并广播存在 (UDP 广播)",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+
+			finder := discovery.NewUDPFinder(name, port)
+			if err := finder.Start(ctx); err != nil {
+				return err
+			}
+			fmt.Printf("RippleGo 节点已启动，正在通过 UDP:%d 广播，名称=%s。按 Ctrl+C 停止。\n", port, name)
+
+			sigCh := make(chan os.Signal, 1)
+			signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+			<-sigCh
+			fmt.Println("\n正在退出...")
+			return finder.Stop()
+		},
+	}
+
+	c.Flags().IntVarP(&port, "port", "p", 7788, "UDP 广播端口")
+	c.Flags().StringVar(&name, "name", "ripplego", "节点名称")
 	return c
 }

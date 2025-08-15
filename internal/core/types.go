@@ -19,10 +19,11 @@ type ChunkID string
 
 // Node 表示P2P网络中的一个节点
 type Node struct {
-	ID       NodeID    `json:"id"`       // 节点ID
-	Address  string    `json:"address"`  // IP:Port
-	LastSeen time.Time `json:"lastSeen"` // 上次心跳时间
-	Status   string    `json:"status"`   // online/offline
+	ID          NodeID    `json:"id"`           // 节点ID
+	Address     string    `json:"address"`      // IP:Port（服务端口）
+	ServicePort int       `json:"servicePort"`  // 服务端口（TCP传输）
+	LastSeen    time.Time `json:"lastSeen"`     // 上次心跳时间
+	Status      string    `json:"status"`       // online/offline
 }
 
 // FileInfo 文件的元数据信息
