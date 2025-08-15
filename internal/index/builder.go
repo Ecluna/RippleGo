@@ -12,7 +12,7 @@ import (
 // BuildFileIndex 读取文件，计算哈希，生成文件元信息与分片列表
 // 返回 FileInfo 和对应的 ChunkInfo 列表
 func BuildFileIndex(filePath string, chunkSize int64) (core.FileInfo, []core.ChunkInfo, error) {
-	hash, size, err := ComputeFileSHA256(filePath)
+	fileHash, size, err := ComputeFileSHA256(filePath)
 	if err != nil {
 		return core.FileInfo{}, nil, err
 	}
@@ -27,7 +27,7 @@ func BuildFileIndex(filePath string, chunkSize int64) (core.FileInfo, []core.Chu
 		Name:       filepath.Base(filePath),
 		Path:       filePath,
 		Size:       size,
-		Hash:       hash,
+		Hash:       fileHash,
 		ChunkSize:  chunkSize,
 		ChunkCount: chunkCount,
 		CreatedAt:  time.Now(),
@@ -43,12 +43,14 @@ func BuildFileIndex(filePath string, chunkSize int64) (core.FileInfo, []core.Chu
 			sz = remaining
 		}
 		cid := core.GenerateChunkID(fi.ID, i)
+		chash, err := ComputeChunkSHA256(filePath, offset, sz)
+		if err != nil { return core.FileInfo{}, nil, err }
 		chunks = append(chunks, core.ChunkInfo{
 			ID:     cid,
 			FileID: fi.ID,
 			Index:  i,
 			Size:   sz,
-			Hash:   "", // 可选：后续实现分片级哈希
+			Hash:   chash,
 			Offset: offset,
 		})
 		offset += sz

@@ -22,3 +22,15 @@ func ComputeFileSHA256(path string) (string, int64, error) {
 	}
 	return hex.EncodeToString(h.Sum(nil)), size, nil
 }
+
+// ComputeChunkSHA256 计算指定偏移与长度的分片哈希
+func ComputeChunkSHA256(path string, offset int64, size int64) (string, error) {
+	f, err := os.Open(path)
+	if err != nil { return "", err }
+	defer f.Close()
+	if _, err := f.Seek(offset, io.SeekStart); err != nil { return "", err }
+	h := sha256.New()
+	lr := io.LimitReader(f, size)
+	if _, err := io.Copy(h, lr); err != nil { return "", err }
+	return hex.EncodeToString(h.Sum(nil)), nil
+}
