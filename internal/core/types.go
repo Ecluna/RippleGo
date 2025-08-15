@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"net"
+	"strconv"
 	"time"
 )
 
@@ -28,6 +29,7 @@ type Node struct {
 type FileInfo struct {
 	ID          FileID    `json:"id"`          // 文件唯一标识
 	Name        string    `json:"name"`        // 文件名
+	Path        string    `json:"path"`        // 本地文件路径
 	Size        int64     `json:"size"`        // 文件大小（字节）
 	Hash        string    `json:"hash"`        // SHA-256哈希值
 	ChunkSize   int64     `json:"chunkSize"`   // 分片大小
@@ -71,14 +73,14 @@ func GenerateNodeID(addr net.Addr) NodeID {
 
 // GenerateFileID 生成文件ID
 func GenerateFileID(filePath string, size int64) FileID {
-	data := filePath + string(rune(size))
+	data := filePath + ":" + strconv.FormatInt(size, 10)
 	hash := sha256.Sum256([]byte(data))
 	return FileID(hex.EncodeToString(hash[:]))
 }
 
 // GenerateChunkID 生成分片ID
 func GenerateChunkID(fileID FileID, index int) ChunkID {
-	data := string(fileID) + string(rune(index))
+	data := string(fileID) + ":" + strconv.Itoa(index)
 	hash := sha256.Sum256([]byte(data))
 	return ChunkID(hex.EncodeToString(hash[:])[:16])
 }

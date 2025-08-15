@@ -1,10 +1,14 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/schollz/progressbar/v3"
+	"github.com/spf13/cobra"
+
+	"github.com/ripplego/ripplego/internal/discovery"
 )
 
 func NewRootCmd() *cobra.Command {
@@ -31,19 +35,39 @@ func newVersionCmd() *cobra.Command {
 }
 
 func newListCmd() *cobra.Command {
-	return &cobra.Command{
+	var port int
+	var host string
+
+	c := &cobra.Command{
 		Use:   "list",
-		Short: "查看当前可下载文件 (占位)",
+		Short: "查看当前可下载文件 (发现局域网节点)",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
+			defer cancel()
+
+			finder := discovery.NewMDNSFinder(host, port)
+			if err := finder.Start(ctx); err != nil {
+				return err
+			}
+			time.Sleep(2 * time.Second)
+			nodes := finder.Nodes()
+
 			bar := progressbar.NewOptions(100,
-				progressbar.OptionSetDescription("扫描网络中的共享..."),
+				progressbar.OptionSetDescription("扫描网络中的节点..."),
 				progressbar.OptionShowBytes(false),
 			)
 			for i := 0; i < 100; i++ {
 				_ = bar.Add(1)
 			}
-			fmt.Println("\n暂未实现节点发现与索引，后续迭代补全。")
-			return nil
+			fmt.Printf("\n发现节点数: %d\n", len(nodes))
+			for _, n := range nodes {
+				fmt.Printf("- %s (%s)\n", n.ID, n.Address)
+			}
+			return finder.Stop()
 		},
 	}
+
+	c.Flags().IntVarP(&port, "port", "p", 7788, "mDNS 广播端口")
+	c.Flags().StringVar(&host, "host", "ripplego.local", "mDNS 主机名")
+	return c
 }
