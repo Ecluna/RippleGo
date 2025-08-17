@@ -14,8 +14,8 @@ CLI -> 控制模块 -> (节点发现/文件索引/分片传输/状态管理) -> 
 
 ## 快速开始
 ```
-go build -o p2p-tool ./cmd/ripplego
-./p2p-tool --help
+go build -o ripplego ./cmd/ripplego
+./ripplego --help
 ```
 
 ## 命令

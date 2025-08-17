@@ -16,7 +16,7 @@ import (
 
 func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "p2p-tool",
+		Use:   "ripplego",
 		Short: "RippleGo: 轻量级 P2P 文件分享工具",
 		Long:  `RippleGo 是一个去中心化、跨平台、支持并发下载的 P2P 文件分享工具。`,
 	}
